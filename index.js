@@ -35,6 +35,10 @@ client.login(process.env.TOKEN);
 
 client.on(Events.InteractionCreate, async interaction => {
 	if (!interaction.isChatInputCommand()) return;
+	if (interaction.user.id !== "266413889682407428") {
+		await interaction.reply({ content: 'Insufficient permissions.' });
+		return;
+	} 
 
 	const command = interaction.client.commands.get(interaction.commandName);
 
