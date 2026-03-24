@@ -1,11 +1,12 @@
-const { SlashCommandBuilder } = require('discord.js');
+import { SlashCommandBuilder } from 'discord.js';
+import type { ChatInputCommandInteraction } from 'discord.js';
 
-module.exports = {
+export default {
   data: new SlashCommandBuilder()
     .setName('reload')
     .setDescription('Reloads a command.')
     .addStringOption((option) => option.setName('command').setDescription('The command to reload.').setRequired(true)),
-  async execute(interaction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     const commandName = interaction.options.getString('command', true).toLowerCase();
     const command = interaction.client.commands.get(commandName);
 
@@ -14,16 +15,21 @@ module.exports = {
     }
 
     delete require.cache[require.resolve(`./${command.data.name}.js`)];
-
     try {
       const newCommand = require(`./${command.data.name}.js`);
       interaction.client.commands.set(newCommand.data.name, newCommand);
       await interaction.reply(`Command \`${newCommand.data.name}\` was reloaded!`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(error);
-      await interaction.reply(
-        `There was an error while reloading a command \`${command.data.name}\`:\n\`${error.message}\``,
-      );
+      if (error instanceof Error) {
+        await interaction.reply(
+          `There was an error while reloading a command \`${command.data.name}\`:\n\`${error.message}\``,
+        );
+      } else {
+        await interaction.reply(
+          `There was an error while reloading a command \`${command.data.name}\``,
+        );
+      }
     }
   },
 };

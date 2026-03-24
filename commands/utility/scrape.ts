@@ -1,6 +1,7 @@
-const { SlashCommandBuilder } = require('discord.js');
+import { SlashCommandBuilder } from 'discord.js';
+import type { ChatInputCommandInteraction } from 'discord.js';
 
-module.exports = {
+export default {
   data: new SlashCommandBuilder()
     .setName('scrape')
     .setDescription('Scrape all of the messages of a channel.')
@@ -9,7 +10,7 @@ module.exports = {
         .setName("channel")
         .setDescription("the target channel")
         .setRequired(true)),
-  async execute(interaction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     const channel = interaction.options.getChannel("channel");
     console.log(channel);
     await interaction.reply('Pong!');

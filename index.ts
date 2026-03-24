@@ -1,6 +1,12 @@
-const { Client, Collection, Events, GatewayIntentBits, MessageFlags } = require('discord.js');
-const fs = require('node:fs');
-const path = require('node:path');
+import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
+import fs from 'node:fs';
+import path from 'node:path';
+
+declare module "discord.js" {
+	interface Client {
+		commands: Collection<String, any>
+	}
+}
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -11,13 +17,13 @@ const commandFolders = fs.readdirSync(foldersPath);
 
 for (const folder of commandFolders) {
 	const commandsPath = path.join(foldersPath, folder);
-	const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+	const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.ts'));
 	for (const file of commandFiles) {
 		const filePath = path.join(commandsPath, file);
 		const command = require(filePath);
 		// Set a new item in the Collection with the key as the command name and the value as the exported module
-		if ('data' in command && 'execute' in command) {
-			client.commands.set(command.data.name, command);
+		if ('data' in command.default && 'execute' in command.default) {
+			client.commands.set(command.default.data.name, command.default);
 		} else {
 			console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
 		}
