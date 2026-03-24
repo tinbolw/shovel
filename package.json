@@ -1,0 +1,9 @@
+{
+	"dependencies": {
+		"discord.js": "^14.18.0"
+	},
+	"scripts": {
+		"dev": "node --env-file=.env ./deploy-guild.js && node --env-file=.env index.js",
+		"start": "node --env-file=.env ./deploy-global.js && node --env-file=.env index.js"
+	}
+}
