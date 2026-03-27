@@ -3,7 +3,7 @@
 		"discord.js": "^14.18.0"
 	},
 	"scripts": {
-		"dev": "node --env-file=.env ./deploy-guild.js && tsx --env-file=.env index.ts",
+		"dev": "tsx --env-file=.env ./src/deploy-guild.ts && tsx --env-file=.env ./src/index.ts",
 		"start": "node --env-file=.env ./deploy-global.js && tsx --env-file=.env index.ts",
 		"lint": "eslint ."
 	},
@@ -11,5 +11,6 @@
 		"@types/node": "^25.5.0",
 		"tsx": "^4.21.0",
 		"typescript": "^5.9.3"
-	}
+	},
+	"type": "module"
 }

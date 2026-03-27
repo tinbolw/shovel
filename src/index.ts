@@ -1,6 +1,7 @@
 import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from "node:url";
 
 declare module "discord.js" {
 	interface Client {
@@ -8,9 +9,19 @@ declare module "discord.js" {
 	}
 }
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({ intents: [ 
+	GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildExpressions,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMessagePolls
+]});
 
 client.commands = new Collection();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
@@ -20,7 +31,7 @@ for (const folder of commandFolders) {
 	const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.ts'));
 	for (const file of commandFiles) {
 		const filePath = path.join(commandsPath, file);
-		const command = require(filePath);
+		const command = await import(`file://${filePath}`);
 		// Set a new item in the Collection with the key as the command name and the value as the exported module
 		if ('data' in command.default && 'execute' in command.default) {
 			client.commands.set(command.default.data.name, command.default);
@@ -44,10 +55,10 @@ client.on(Events.InteractionCreate, async interaction => {
 	if (interaction.user.id !== "266413889682407428") {
 		await interaction.reply({ content: 'Insufficient permissions.' });
 		return;
-	} 
+	}
 
 	const command = interaction.client.commands.get(interaction.commandName);
-	
+
 	if (!command) {
 		console.error(`No command matching ${interaction.commandName} was found.`);
 		return;
