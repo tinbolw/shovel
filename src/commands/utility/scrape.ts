@@ -1,6 +1,6 @@
-import { fetchMessages, fetchMessageData } from '../../lib/messages.js';
+import { fetchMessageData } from '../../lib/messages.js';
 import { SlashCommandBuilder, TextChannel } from 'discord.js';
-import type { ChatInputCommandInteraction, Emoji, Message, MessageResolvable, PollAnswer } from 'discord.js';
+import type { ChatInputCommandInteraction } from 'discord.js';
 import * as fs from 'fs';
 
 export default {

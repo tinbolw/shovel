@@ -1,5 +1,5 @@
 import { Message, TextChannel } from 'discord.js';
-import type { Attachment, Collection, Emoji, GuildEmoji, MessageReaction, PartialPollAnswer, Poll, PollAnswer } from 'discord.js';
+import type { Attachment, MessageReaction, PartialPollAnswer, Poll, PollAnswer } from 'discord.js';
 
 /**
  * 
@@ -7,7 +7,7 @@ import type { Attachment, Collection, Emoji, GuildEmoji, MessageReaction, Partia
  * @param before 
  * @param messageList 
  */
-// TODO must handle threads, and messages sent in uuu
+// TODO must handle threads, and messages sent in voice channels
 export async function fetchMessages(channel: TextChannel, messageList: Message[], before?: string): Promise<number> {
   return channel.messages.fetch({ limit: 100, before: before }).then(async (messages) => {
     if (messages.size !== 0) {
@@ -23,31 +23,25 @@ export async function fetchMessages(channel: TextChannel, messageList: Message[]
   });
 }
 
-export async function messageToJson(message: Message) {
-  for (const [key, value] of message.reactions.cache) {
-    try {
-      let reaction = await message.reactions.cache.get(key);
-      await message.reactions.cache.get(key)?.users.fetch();
-      if (reaction) {
-        // reaction.userData = Object.values(Object.fromEntries(await message.reactions.cache.get(key)))
-      }
-    } catch (e) {
-
-    }
-  }
-}
-
-// attachments - id is included, but fetching the attachment data upfront should make parsing all message data faster in the future
-// poll, reactions - data is not included in JSON write by default
-// author, stickers - id is included; fetching relevant data into a cache as needed should be enough
-// components - omitting for now
-// TODO: check to see if all data is included
+/*
+message.attachments - id is included by default, but fetching the attachment data upfront should
+make parsing all message data faster in the future
+message.poll, message.reactions - data is not included in JSON write by default
+message.author, message.stickers - id is included; fetching relevant data into a cache as needed should be enough
+message.components - omitted for now
+*/
+/**
+ * Fetches message data including poll and reactions into an object that contains that data when written to JSON.
+ * See the extended function comment for more details.
+ * @param message 
+ * @returns 
+ */
 export async function fetchMessageData(message: Message): Promise<CompleteMessage> {
   let completeMessage: CompleteMessage = {
     dump: message,
   }
   if (message.poll) {
-    let completePoll: CompletePoll = {
+    completeMessage.pollData = {
       dump: message.poll,
       answerData: [],
     }
@@ -57,27 +51,8 @@ export async function fetchMessageData(message: Message): Promise<CompleteMessag
         emojiData: answer.emoji?.id
       }
       await answer.voters.fetch();
-      completePoll.answerData.push(completePollAnswer);
+      completeMessage.pollData.answerData.push(completePollAnswer);
     }
-    completeMessage.pollData = completePoll;
-    // fs.writeFile('./dump/test.json', JSON.stringify(completePoll), err => {
-    //   if (err) {
-    //     console.error(err);
-    //   } else {
-    //   }
-    // })
-    // fs.writeFile('./dump/poll.json', JSON.stringify(message.poll), err => {
-    //   if (err) {
-    //     console.error(err);
-    //   } else {
-    //   }
-    // })
-    // fs.writeFile('./dump/pollanswers.json', JSON.stringify(message.poll.answers), err => {
-    //   if (err) {
-    //     console.error(err);
-    //   } else {
-    //   }
-    // })
   }
   if (message.attachments) {
     completeMessage.attachmentData = [];
@@ -101,6 +76,7 @@ interface CompleteMessage {
   attachmentData?: Attachment[],
   reactionData?: MessageReaction[],
 }
+
 interface CompletePollAnswer {
   dump: PollAnswer | PartialPollAnswer,
   emojiData?: string | null,
