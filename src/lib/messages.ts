@@ -1,6 +1,5 @@
-import * as fs from 'fs';
 import { Message, TextChannel } from 'discord.js';
-import type { Collection, Emoji, GuildEmoji, PartialPollAnswer, Poll, PollAnswer } from 'discord.js';
+import type { Attachment, Collection, Emoji, GuildEmoji, MessageReaction, PartialPollAnswer, Poll, PollAnswer } from 'discord.js';
 
 /**
  * 
@@ -8,6 +7,7 @@ import type { Collection, Emoji, GuildEmoji, PartialPollAnswer, Poll, PollAnswer
  * @param before 
  * @param messageList 
  */
+// TODO must handle threads, and messages sent in uuu
 export async function fetchMessages(channel: TextChannel, messageList: Message[], before?: string): Promise<number> {
   return channel.messages.fetch({ limit: 100, before: before }).then(async (messages) => {
     if (messages.size !== 0) {
@@ -37,18 +37,11 @@ export async function messageToJson(message: Message) {
   }
 }
 
-// TODO:
-// embeds
-// components
-// attachments
-// stickers
-// editedTimestamp
-// reactions
-// mentions
-
-// DONE:
-// author can replace authorId, but opted not to include it for now
-// poll
+// attachments - id is included, but fetching the attachment data upfront should make parsing all message data faster in the future
+// poll, reactions - data is not included in JSON write by default
+// author, stickers - id is included; fetching relevant data into a cache as needed should be enough
+// components - omitting for now
+// TODO: check to see if all data is included
 export async function fetchMessageData(message: Message): Promise<CompleteMessage> {
   let completeMessage: CompleteMessage = {
     dump: message,
@@ -61,7 +54,7 @@ export async function fetchMessageData(message: Message): Promise<CompleteMessag
     for (const answer of message.poll.answers.values()) {
       const completePollAnswer: CompletePollAnswer = {
         dump: answer,
-        emojiData: answer.emoji
+        emojiData: answer.emoji?.id
       }
       await answer.voters.fetch();
       completePoll.answerData.push(completePollAnswer);
@@ -86,19 +79,34 @@ export async function fetchMessageData(message: Message): Promise<CompleteMessag
     //   }
     // })
   }
+  if (message.attachments) {
+    completeMessage.attachmentData = [];
+    for (const attachment of message.attachments.values()) {
+      completeMessage.attachmentData.push(attachment);
+    }
+  }
+  if (message.reactions) {
+    completeMessage.reactionData = [];
+    for (const reaction of message.reactions.cache.values()) {
+      await reaction.users.fetch();
+      completeMessage.reactionData.push(reaction);
+    }
+  }
   return completeMessage;
 }
 
 interface CompleteMessage {
   dump: Message,
   pollData?: CompletePoll,
+  attachmentData?: Attachment[],
+  reactionData?: MessageReaction[],
 }
-export interface CompletePollAnswer {
+interface CompletePollAnswer {
   dump: PollAnswer | PartialPollAnswer,
-  emojiData: GuildEmoji | Emoji | null
+  emojiData?: string | null,
 }
 
-export interface CompletePoll {
+interface CompletePoll {
   dump: Poll,
   answerData: CompletePollAnswer[]
 }
