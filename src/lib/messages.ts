@@ -50,7 +50,8 @@ export async function fetchMessages(messageManager: GuildMessageManager, message
   return messageManager.fetch({ limit: 100, before: before }).then(async (messages) => {
     if (messageList.length >= 50000) { // Write chunk
       writeFile(messageList, ++chunk);
-      messageList = [];
+      // messageList = [];
+      messageList.length = 0;
     }
     if (messages.size !== 0) {
       for (const message of messages.values()) {
@@ -65,7 +66,8 @@ export async function fetchMessages(messageManager: GuildMessageManager, message
     } else {
       if (messageList.length > 0) {
         writeFile(messageList, ++chunk);
-        messageList = [];
+        // messageList = [];
+        messageList.length = 0;
       }
       return 0;
     }
