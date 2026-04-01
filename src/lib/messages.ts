@@ -114,7 +114,11 @@ export async function fetchMessageData(message: Message): Promise<CompleteMessag
   if (message.reactions) {
     completeMessage.reactionData = [];
     for (const reaction of message.reactions.cache.values()) {
-      await reaction.users.fetch();
+      try {
+        await reaction.users.fetch();
+      } catch (err) {
+        console.error(`Error fetching reactions for message ${message.id}`);
+      }
       completeMessage.reactionData.push(reaction);
     }
   }
