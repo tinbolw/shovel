@@ -1,5 +1,43 @@
-import { Message, TextChannel } from 'discord.js';
-import type { Attachment, MessageReaction, PartialPollAnswer, Poll, PollAnswer } from 'discord.js';
+import { GuildMessageManager, Message, TextChannel, ThreadChannel } from 'discord.js';
+import { Attachment, ForumChannel, MessageReaction, PartialPollAnswer, Poll, PollAnswer, VoiceChannel } from 'discord.js';
+import * as fs from 'fs';
+
+/**
+ * 
+ * @param name 
+ */
+function createDir(name: string) {
+  try {
+    if (!fs.existsSync(name)) {
+      fs.mkdirSync(name);
+      console.log(`Created folder: ${name}`);
+    } else {
+      console.warn(`Folder ${name} already exists.`);
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// TODO may use 
+function writeFile(messageList: CompleteMessage[], chunk: number) {
+  if (messageList[0].dump.channel instanceof TextChannel ||
+    messageList[0].dump.channel instanceof VoiceChannel
+  ) {
+    createDir('./dump');
+    createDir(`./dump/${messageList[0].dump.channel.name}`);
+    const fileName = `./dump/${messageList[0].dump.channel.name}/${chunk}.json`;
+    fs.writeFileSync(fileName, JSON.stringify(messageList));
+    console.log(`Wrote ${fileName}.`);
+  } else if (messageList[0].dump.channel instanceof ThreadChannel) {
+    createDir('./dump');
+    createDir(`./dump/${messageList[0].dump.channel.parent?.name}`);
+    createDir(`./dump/${messageList[0].dump.channel.parent?.name}/${messageList[0].dump.channel.name}`);
+    const fileName = `./dump/${messageList[0].dump.channel.parent?.name}/${messageList[0].dump.channel.name}/${chunk}.json`;
+    fs.writeFileSync(fileName, JSON.stringify(messageList));
+    console.log(`Wrote ${fileName}.`);
+  }
+}
 
 /**
  * 
@@ -8,16 +46,29 @@ import type { Attachment, MessageReaction, PartialPollAnswer, Poll, PollAnswer }
  * @param messageList 
  */
 // TODO must handle threads, and messages sent in voice channels
-export async function fetchMessages(channel: TextChannel, messageList: Message[], before?: string): Promise<number> {
-  return channel.messages.fetch({ limit: 100, before: before }).then(async (messages) => {
+export async function fetchMessages(messageManager: GuildMessageManager, messageList: CompleteMessage[], chunk = 0, before?: string): Promise<number> {
+  return messageManager.fetch({ limit: 100, before: before }).then(async (messages) => {
+    if (messageList.length >= 50000) { // Write chunk
+      writeFile(messageList, ++chunk);
+      // messageList = [];
+      messageList.length = 0;
+    }
     if (messages.size !== 0) {
       for (const message of messages.values()) {
-        messageList.push(message);
+        messageList.push(await fetchMessageData(message));
       }
-      const earliest = messageList.at(-1);
-      await new Promise(resolve => setTimeout(resolve, 25)); // Discord rate limit
-      return messages.size + await fetchMessages(channel, messageList, earliest?.id);
+      const earliest = messageList.at(-1)?.dump;
+      await new Promise(resolve => setTimeout(resolve, 50)); // Discord rate limit
+      process.stdout.clearLine(0);
+      process.stdout.cursorTo(0);
+      process.stdout.write(`${(new Date(Date.now()).toISOString())} Reading ${messages.size + messageList.length} messages from ${messageManager.channel.name}...`);
+      return messages.size + await fetchMessages(messageManager, messageList, chunk, earliest?.id);
     } else {
+      if (messageList.length > 0) {
+        writeFile(messageList, ++chunk);
+        // messageList = [];
+        messageList.length = 0;
+      }
       return 0;
     }
   });
@@ -63,7 +114,11 @@ export async function fetchMessageData(message: Message): Promise<CompleteMessag
   if (message.reactions) {
     completeMessage.reactionData = [];
     for (const reaction of message.reactions.cache.values()) {
-      await reaction.users.fetch();
+      try {
+        await reaction.users.fetch();
+      } catch (err) {
+        console.error(`Error fetching reactions for message ${message.id}`);
+      }
       completeMessage.reactionData.push(reaction);
     }
   }

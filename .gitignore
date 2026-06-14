@@ -141,5 +141,7 @@ dist
 # MacOS
 .DS_Store
 
-# Local testing
+# Output
 dump
+names.json
+ids.json
