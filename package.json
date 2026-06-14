@@ -4,8 +4,7 @@
 	},
 	"scripts": {
 		"dev": "tsx --env-file=.env ./src/deploy-guild.ts && tsx --env-file=.env ./src/index.ts",
-		"start": "node --env-file=.env ./deploy-global.js && tsx --env-file=.env index.ts",
-		"lint": "eslint ."
+		"start": "node --env-file=.env ./deploy-global.js && tsx --env-file=.env index.ts"
 	},
 	"devDependencies": {
 		"@types/node": "^25.5.0",

@@ -1,5 +1,17 @@
-import { GuildMessageManager, Message, TextChannel, ThreadChannel } from 'discord.js';
-import { Attachment, ForumChannel, MessageReaction, PartialPollAnswer, Poll, PollAnswer, VoiceChannel } from 'discord.js';
+import { 
+    GuildMessageManager,
+    Message,
+    TextChannel,
+    ThreadChannel
+} from 'discord.js';
+import {
+    Attachment,
+    MessageReaction,
+    type PartialPollAnswer,
+    Poll,
+    PollAnswer,
+    VoiceChannel
+} from 'discord.js';
 import * as fs from 'fs';
 
 /**
